@@ -84,18 +84,13 @@ def thread_SendingData():
                 continue
             identicalCounter = 0
             # don't try to seperate by semicolon ';' os.system will use that as command seperator
-            fmt = "sensorname,temperature,humidity"
-            params = args.name + " " + \
-                str(mea.temperature) + " " + str(mea.humidity)
-            # would be more efficient to generate fmt only once
-            if (args.TwoPointCalibration or args.offset):
-                fmt += ",humidityCalibrated"
-                params += " " + str(mea.calibratedHumidity)
-            if (args.battery):
-                fmt += ",batteryLevel"
-                params += " " + str(mea.battery)
+            fmt = "sensorname,temperature,humidity,batteryLevel,timestamp,humidityCalibrated"
+            params = args.name
+            params += " " + str(mea.temperature)
+            params += " " + str(mea.humidity)
+            params += " " + str(mea.battery)
             params += " " + str(mea.timestamp)
-            fmt += ",timestamp"
+            params += " " + str(mea.calibratedHumidity)
             cmd = path + "/" + args.callback + " " + fmt + " " + params
             print(cmd)
             ret = os.system(cmd)
@@ -126,6 +121,7 @@ class MyDelegate(btle.DefaultDelegate):
 
     def handleNotification(self, cHandle, data):
         global measurements
+        global globalBatteryLevel
         try:
             measurement = Measurement(0, 0, 0, 0, 0)
             measurement.timestamp = int(time.time())
@@ -321,7 +317,7 @@ while True:
             unconnectedTime = None
 
         if args.battery:
-            if(cnt % args.battery == 0):
+            if cnt % args.battery == 0:
                 batt = p.readCharacteristic(0x001b)
                 batt = int.from_bytes(batt, byteorder="little")
                 print("Battery-Level: " + str(batt))
